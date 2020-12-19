@@ -29,11 +29,24 @@ gl_embed = gensim_api.load("glove-wiki-gigaword-300")
 # explore words for potential topics
 text = df_clean.apply(tp.clean_text)
 
-tp.get_top_n_words(text, n=100)
+# BERT issue with exeeding the word len per observation (512) Check the lengths 
+# Issue found missing entry 'nan' on 
+def token_trunc(txt, max_length):
+    word_counts = [0] * len(txt)
+    for index, obs in enumerate(txt):
+        word_counts[index] = len(obs.split())
+    updated_txt = [l for l in txt if len(l.split()) < max_length]
+    return word_counts, updated_txt 
+
+wrd_count, truncated_text = token_trunc(text, 400)
+
+if 'nan' in truncated_text: truncated_text.remove('nan') # fixes nan but incorporate into fun
+
+###
+tp.get_top_n_words(truncated_text, n=100)
 
 # Find potenital key words 
 # play, laugh, cry, hit
-
 def get_similar_words(list_words, top, wb_model):
     list_out = list_words
     for w in wb_model.most_similar(list_words, topn=top):
@@ -91,14 +104,32 @@ def utils_bert_embedding(txt, tokenizer, bert_model):
     embedding = bert_model(idx)
     X = np.array(embedding[0][0][1:-1])
     return X
-
-mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in text]
-
-# BERT issue with exeeding the word len per observation (512) Check the lengths 
-token_counts = [0] * len(text)
-
-for index, obs in enumerate(text):
-    token_counts[index] = len(obs.split())    
+    
 ## FIX THIS 
+mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in truncated_text]    
+
 ## create the feature matrix (observations x 768)
-X = np.array(lst_mean_vecs)
+X = np.array(mean_vec)
+
+test = list(map(tuple, np.where(np.isnan(X))))
+
+X = X[~np.isnan(X)]
+# Create dict of context 
+dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
+
+np.any(np.isnan(X))
+np.all(np.isfinite(X))
+
+# Create model 
+similarities = np.array([metrics.pairwise.cosine_similarity(X,y).T.tolist()[0] for y in dict_y.values()]).T
+
+labels = list(dict_y.keys())
+for i in range(len(similarities)):
+    if sum(similarities[i]) == 0:
+        similarities[i] = [0]*len(labels)
+        similarities[i][np.random.choice(range(len(labels)))] = 1
+
+    similarities[i] = similarities[i] / sim(similarities[i])
+
+# Classify based on Cosine Similarity score
+
