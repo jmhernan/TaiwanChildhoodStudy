@@ -40,7 +40,7 @@ def token_trunc(txt, max_length):
 
 wrd_count, truncated_text = token_trunc(text, 400)
 
-if 'nan' in truncated_text: truncated_text.remove('nan') # fixes nan but incorporate into fun
+if 'nan' in truncated_text: truncated_text.remove('nan') # Not working! find better fix in data cleaning function!!
 
 ###
 tp.get_top_n_words(truncated_text, n=100)
@@ -111,14 +111,13 @@ mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in trun
 ## create the feature matrix (observations x 768)
 X = np.array(mean_vec)
 
+np.any(np.isnan(X)) # where are these comming from? 
+np.all(np.isfinite(X))
+
 test = list(map(tuple, np.where(np.isnan(X))))
 
-X = X[~np.isnan(X)]
 # Create dict of context 
 dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
-
-np.any(np.isnan(X))
-np.all(np.isfinite(X))
 
 # Create model 
 similarities = np.array([metrics.pairwise.cosine_similarity(X,y).T.tolist()[0] for y in dict_y.values()]).T
