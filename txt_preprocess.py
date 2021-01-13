@@ -8,6 +8,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 # regex conditions for text cleanup
 BAD_SYMBOLS_RE = re.compile(r'[\W]')
 REM_LETTER = re.compile(r'(\b\w{1}\b)')
+REM_NAN_WRD = re.compile(r'^(?:\s*nan\s*)')
 
 # handle json
 def get_metadata_dict(metadata_file):
@@ -19,6 +20,7 @@ def get_metadata_dict(metadata_file):
 def clean_text(text):    
     text = BAD_SYMBOLS_RE.sub(' ', text)
     text = REM_LETTER.sub('', text) 
+    text = REM_NAN_WRD.sub('', text)
     return text
 
 def update_abb(text, json_abb):

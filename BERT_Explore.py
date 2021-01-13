@@ -29,18 +29,35 @@ gl_embed = gensim_api.load("glove-wiki-gigaword-300")
 # explore words for potential topics
 text = df_clean.apply(tp.clean_text)
 
+#  
+
+def remove_non_ascii(txt):
+    clean_txt = [0]*len(txt)
+    for ind, t in enumerate(txt):
+        t = t.encode('ascii', 'ignore')
+        clean_txt[ind] = t.decode('ascii')
+    return clean_txt
+
+text = remove_non_ascii(text)    
 # BERT issue with exeeding the word len per observation (512) Check the lengths 
 # Issue found missing entry 'nan' on 
 def token_trunc(txt, max_length):
+    '''
+    Revome entries that are longer than specified length
+    Remove empty list entries
+    '''
+    updated_txt = [l for l in txt if len(l.split()) < max_length]
+    updated_txt = list(filter(None, updated_txt))
+    return updated_txt 
+
+def word_count_entry(txt):
     word_counts = [0] * len(txt)
     for index, obs in enumerate(txt):
         word_counts[index] = len(obs.split())
-    updated_txt = [l for l in txt if len(l.split()) < max_length]
-    return word_counts, updated_txt 
+    return word_counts
 
-wrd_count, truncated_text = token_trunc(text, 400)
-
-if 'nan' in truncated_text: truncated_text.remove('nan') # Not working! find better fix in data cleaning function!!
+word_counts = word_count_entry(text)
+truncated_text = token_trunc(text, 500)
 
 ###
 tp.get_top_n_words(truncated_text, n=100)
