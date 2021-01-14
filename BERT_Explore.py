@@ -29,6 +29,7 @@ gl_embed = gensim_api.load("glove-wiki-gigaword-300")
 # explore words for potential topics
 text = df_clean.apply(tp.clean_text)
 
+test_set = [text[0], text[1], text[2], text[3]]
 #  
 
 def remove_non_ascii(txt):
@@ -38,7 +39,7 @@ def remove_non_ascii(txt):
         clean_txt[ind] = t.decode('ascii')
     return clean_txt
 
-text = remove_non_ascii(text)    
+text = remove_non_ascii(test_set)    
 # BERT issue with exeeding the word len per observation (512) Check the lengths 
 # Issue found missing entry 'nan' on 
 def token_trunc(txt, max_length):
@@ -105,12 +106,6 @@ for k,v in dict_codes.items():
 fig, ax = plt.subplots()
 sns.scatterplot(data=dtf, x="x", y="y", hue="cluster", ax=ax)
 
-ax.legend().texts[0].set_text(None)
-ax.set(xlabel=None, ylabel=None, xticks=[], xticklabels=[], yticks=[], yticklabels=[])
-
-for i in range(len(dtf)):
-    ax.annotate(dtf.index[i], xy=(dtf["x"].iloc[i],dtf["y"].iloc[i]), xytext=(5,2), textcoords='offset points', ha='right', va='bottom')
-
 # BERT 
 tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 m_bert = transformers.TFBertModel.from_pretrained('bert-base-uncased')
@@ -122,22 +117,29 @@ def utils_bert_embedding(txt, tokenizer, bert_model):
     X = np.array(embedding[0][0][1:-1])
     return X
     
-## FIX THIS 
+# 
+text_test = tokenizer.encode(truncated_text)
+idx = np.array(text_test)[None,:]
+embedding = m_bert(idx)
+
+inputs = tokenizer.encode(["Hello, my dog is cute"])
+outputs = m_bert(inputs)
+
+
 mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in truncated_text]    
 
 ## create the feature matrix (observations x 768)
 X = np.array(mean_vec)
-
-np.any(np.isnan(X)) # where are these comming from? 
-np.all(np.isfinite(X))
-
-test = list(map(tuple, np.where(np.isnan(X))))
-
+X.shape
 # Create dict of context 
 dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
 
-# Create model 
-similarities = np.array([metrics.pairwise.cosine_similarity(X,y).T.tolist()[0] for y in dict_y.values()]).T
+# Create model
+# X.shape 
+# dict_y['PLAY'].shape
+# metrics.pairwise.cosine_similarity(X,[dict_y['PLAY']])
+
+similarities = np.array([metrics.pairwise.cosine_similarity(X,[y]).T.tolist()[0] for y in dict_y.values()]).T
 
 labels = list(dict_y.keys())
 for i in range(len(similarities)):
@@ -145,7 +147,10 @@ for i in range(len(similarities)):
         similarities[i] = [0]*len(labels)
         similarities[i][np.random.choice(range(len(labels)))] = 1
 
-    similarities[i] = similarities[i] / sim(similarities[i])
+    similarities[i] = similarities[i] / sum(similarities[i])
 
 # Classify based on Cosine Similarity score
+predicted_prob = similarities
+predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
+truncated_text[3]
