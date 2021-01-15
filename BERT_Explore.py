@@ -29,8 +29,8 @@ gl_embed = gensim_api.load("glove-wiki-gigaword-300")
 # explore words for potential topics
 text = df_clean.apply(tp.clean_text)
 
-test_set = [text[0], text[1], text[2], text[3]]
-#  
+test_set = text[0:100]
+# Test with smaller sample and implement a better data intake method 
 
 def remove_non_ascii(txt):
     clean_txt = [0]*len(txt)
@@ -153,4 +153,5 @@ for i in range(len(similarities)):
 predicted_prob = similarities
 predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
-truncated_text[3]
+truncated_text[5]
+predicted[5]
