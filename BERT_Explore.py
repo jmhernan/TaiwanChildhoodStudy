@@ -11,10 +11,7 @@ import transformers
 
 import os
 
-
 project_root = '/Users/josehernandez/Documents/eScience/projects/TaiwanChildhoodStudy/'
-
-sys.path.append(project_root)
 
 import txt_preprocess as tp
 
@@ -24,68 +21,32 @@ df = pd. read_excel(os.path.join(data_path,'ChildObservationLemmaDataNoNumNoP_06
 
 df_clean = df["Lemmatize"].astype(str)
 
-gl_embed = gensim_api.load("glove-wiki-gigaword-300")
+gl_embed = gensim_api.load("glove-wiki-gigaword-300") # create function to load pickle or download 
 
 # explore words for potential topics
 text = df_clean.apply(tp.clean_text)
 
-test_set = text[0:100]
 # Test with smaller sample and implement a better data intake method 
+test_set = text[0:100]
 
-def remove_non_ascii(txt):
-    clean_txt = [0]*len(txt)
-    for ind, t in enumerate(txt):
-        t = t.encode('ascii', 'ignore')
-        clean_txt[ind] = t.decode('ascii')
-    return clean_txt
+text = tp.remove_non_ascii(test_set)    
 
-text = remove_non_ascii(test_set)    
-# BERT issue with exeeding the word len per observation (512) Check the lengths 
-# Issue found missing entry 'nan' on 
-def token_trunc(txt, max_length):
-    '''
-    Revome entries that are longer than specified length
-    Remove empty list entries
-    '''
-    updated_txt = [l for l in txt if len(l.split()) < max_length]
-    updated_txt = list(filter(None, updated_txt))
-    return updated_txt 
-
-def word_count_entry(txt):
-    word_counts = [0] * len(txt)
-    for index, obs in enumerate(txt):
-        word_counts[index] = len(obs.split())
-    return word_counts
-
-word_counts = word_count_entry(text)
-truncated_text = token_trunc(text, 500)
+word_counts = tp.word_count_entry(text)
+truncated_text = tp.token_trunc(text, 500)
 
 ###
 tp.get_top_n_words(truncated_text, n=100)
 
-# Find potenital key words 
-# play, laugh, cry, hit
-def get_similar_words(list_words, top, wb_model):
-    list_out = list_words
-    for w in wb_model.most_similar(list_words, topn=top):
-        list_out.append(w[0])
-    return list(set(list_out))
+# Load keywords json
+cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
 
 # Pre-defined vocabulary for behavior codes/categories in observations
 # These need to be defined using keywords found in observation data 
 
-play_sw = get_similar_words(['play','throw','jump'],30, gl_embed)
+dict_codes = {key: None for key in cat_keyw.keys()}
 
-happy_sw = get_similar_words(['laugh','smile','hold'],30, gl_embed)
-
-aggression_sw = get_similar_words(['cry','hit','yell','push','grab'],30, gl_embed)
-
-# create dict of keywords for coding scheme
-dict_codes = {}
-
-dict_codes['PLAY'] = play_sw
-dict_codes['HAPPY'] = happy_sw
-dict_codes['AGGRESSION'] = aggression_sw
+for k in cat_keyw.keys():
+    dict_codes[k] = tp.get_similar_words(cat_keyw[k],30, gl_embed)
 
 # plot these clusters
 all_words= [w for v in dict_codes.values() for w in v]
@@ -125,7 +86,6 @@ embedding = m_bert(idx)
 inputs = tokenizer.encode(["Hello, my dog is cute"])
 outputs = m_bert(inputs)
 
-
 mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in truncated_text]    
 
 ## create the feature matrix (observations x 768)
@@ -135,10 +95,6 @@ X.shape
 dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
 
 # Create model
-# X.shape 
-# dict_y['PLAY'].shape
-# metrics.pairwise.cosine_similarity(X,[dict_y['PLAY']])
-
 similarities = np.array([metrics.pairwise.cosine_similarity(X,[y]).T.tolist()[0] for y in dict_y.values()]).T
 
 labels = list(dict_y.keys())
@@ -150,8 +106,10 @@ for i in range(len(similarities)):
     similarities[i] = similarities[i] / sum(similarities[i])
 
 # Classify based on Cosine Similarity score
+# TO DO Extract the top 3 labels 
 predicted_prob = similarities
 predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
-truncated_text[5]
-predicted[5]
+truncated_text[92]
+predicted[92]
+similarities[92]

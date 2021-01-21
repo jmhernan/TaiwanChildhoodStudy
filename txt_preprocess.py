@@ -38,3 +38,31 @@ def get_top_n_words(corpus, n=None):
     words_freq = [(word, sum_words[0, idx]) for word, idx in vec.vocabulary_.items()]
     words_freq = sorted(words_freq, key = lambda x: x[1], reverse=True)
     return words_freq[:n]
+
+def get_similar_words(list_words, top, wb_model):
+    list_out = list_words
+    for w in wb_model.most_similar(list_words, topn=top):
+        list_out.append(w[0])
+    return list(set(list_out))
+
+def remove_non_ascii(txt):
+    clean_txt = [0]*len(txt)
+    for ind, t in enumerate(txt):
+        t = t.encode('ascii', 'ignore')
+        clean_txt[ind] = t.decode('ascii')
+    return clean_txt
+ 
+def token_trunc(txt, max_length):
+    '''
+    Revome entries that are longer than specified length
+    Remove empty list entries
+    '''
+    updated_txt = [l for l in txt if len(l.split()) < max_length]
+    updated_txt = list(filter(None, updated_txt))
+    return updated_txt 
+
+def word_count_entry(txt):
+    word_counts = [0] * len(txt)
+    for index, obs in enumerate(txt):
+        word_counts[index] = len(obs.split())
+    return word_counts
