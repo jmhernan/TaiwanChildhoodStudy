@@ -10,6 +10,7 @@ import gensim.downloader as gensim_api
 import transformers
 
 import os
+import operator
 
 project_root = '/Users/josehernandez/Documents/eScience/projects/TaiwanChildhoodStudy/'
 
@@ -40,33 +41,6 @@ tp.get_top_n_words(truncated_text, n=100)
 # Load keywords json
 cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
 
-# Pre-defined vocabulary for behavior codes/categories in observations
-# These need to be defined using keywords found in observation data 
-
-dict_codes = {key: None for key in cat_keyw.keys()}
-
-for k in cat_keyw.keys():
-    dict_codes[k] = tp.get_similar_words(cat_keyw[k],30, gl_embed)
-
-# plot these clusters
-all_words= [w for v in dict_codes.values() for w in v]
-X = gl_embed[all_words]
-
-pca = manifold.TSNE(perplexity=40, n_components=2, init='pca')
-X = pca.fit_transform(X)
-
-dtf = pd.DataFrame()
-
-for k,v in dict_codes.items():
-    size = len(dtf) + len(v)
-    dtf_group = pd.DataFrame(X[len(dtf):size], columns=["x","y"], index=v)
-    dtf_group['cluster'] = k
-    dtf = dtf.append(dtf_group)
-
-
-fig, ax = plt.subplots()
-sns.scatterplot(data=dtf, x="x", y="y", hue="cluster", ax=ax)
-
 # BERT 
 tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 m_bert = transformers.TFBertModel.from_pretrained('bert-base-uncased')
@@ -78,20 +52,18 @@ def utils_bert_embedding(txt, tokenizer, bert_model):
     X = np.array(embedding[0][0][1:-1])
     return X
     
-# 
-text_test = tokenizer.encode(truncated_text)
-idx = np.array(text_test)[None,:]
-embedding = m_bert(idx)
-
-inputs = tokenizer.encode(["Hello, my dog is cute"])
-outputs = m_bert(inputs)
-
 mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in truncated_text]    
 
 ## create the feature matrix (observations x 768)
 X = np.array(mean_vec)
 X.shape
+
 # Create dict of context 
+dict_codes = {key: None for key in cat_keyw.keys()}
+
+for k in cat_keyw.keys():
+    dict_codes[k] = tp.get_similar_words(cat_keyw[k],30, gl_embed)
+
 dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
 
 # Create model
@@ -106,10 +78,32 @@ for i in range(len(similarities)):
     similarities[i] = similarities[i] / sum(similarities[i])
 
 # Classify based on Cosine Similarity score
-# TO DO Extract the top 3 labels 
 predicted_prob = similarities
 predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
 truncated_text[92]
 predicted[92]
 similarities[92]
+
+labels_pred = {labels: predicted_prob[1][idx] for idx, labels in enumerate(labels)}
+
+sorted(labels_pred, key=labels_pred.get, reverse=True)
+sorted(predicted_prob[1], reverse=True)
+
+sorted_tuples = sorted(labels_pred.items(), key=operator.itemgetter(1), reverse=True)
+
+# putting together a comprehensible look up table in pandas make function WIP
+# using all the labels
+labels_probability = [0]*len(predicted_prob)
+
+for ind, t in enumerate(predicted_prob):
+    labels_pred = {labels: t[idx] for idx, labels in enumerate(labels)}
+    sorted_tuples = sorted(labels_pred.items(), key=operator.itemgetter(1), reverse=True)
+    labels_probability[ind] = list(sorted_tuples)
+
+len(labels_probability)
+
+validation_df = pd.DataFrame(truncated_text, columns=['cleaned_text_lemma'])    
+validation_df['reults_ordered'] = labels_probability
+
+validation_df.to_csv(os.path.join(data_path,'validation_test.csv'))
