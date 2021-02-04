@@ -34,7 +34,7 @@
         "money",
         "shop"
     ],
-    "GAME":[
+    "PLAY":[
         "finger",
         "marble",
         "maze",
@@ -47,21 +47,16 @@
         "team",
         "win",
         "hide",
-        "seek"
-    ],
-    "EMOTION":[
-        "laugh",
-        "smile",
-        "cry",
-        "whine",
-        "angry",
-        "sad",
-        "embarrassed",
-        "scared",
-        "happy",
-        "excited"
+        "seek",
+        "play",
+        "card",
+        "throw",
+        "ball",
+        "count"
     ],
     "CONFLICT":[
+        "scared",
+        "cry",
         "fight",
         "argue",
         "disagree",
@@ -71,7 +66,10 @@
         "angry",
         "copulate",
         "threaten",
-        "yell"
+        "yell",
+        "push",
+        "fall",
+        "shake"
     ],
     "COOPERATION":[
         "help",
@@ -85,8 +83,8 @@
         "good",
         "request"
     ],
-    "TEASING":
-    [
+    "TEASING":[
+        "sad",
         "tease",
         "embarrassed",
         "laugh",
