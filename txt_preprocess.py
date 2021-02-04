@@ -21,6 +21,7 @@ def clean_text(text):
     text = BAD_SYMBOLS_RE.sub(' ', text)
     text = REM_LETTER.sub('', text) 
     text = REM_NAN_WRD.sub('', text)
+    text = str.lower(text)
     return text
 
 def update_abb(text, json_abb):
