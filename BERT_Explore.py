@@ -18,17 +18,19 @@ import txt_preprocess as tp
 
 data_path = project_root + 'data/'
 
-df = pd. read_excel(os.path.join(data_path,'ChildObservationLemmaDataNoNumNoP_0622.xlsx'))
+df = pd. read_excel(os.path.join(data_path,'4ChildObservation_MasterFile_0120_2021.xlsx'))
 
-df_clean = df["Lemmatize"].astype(str)
+df_text = df["text"].astype(str)
 
 gl_embed = gensim_api.load("glove-wiki-gigaword-300") # create function to load pickle or download 
 
 # explore words for potential topics
-text = df_clean.apply(tp.clean_text)
+text = df_text.apply(tp.clean_text)
+text = text.str.replace('(\d{2}|d{3})', 'person', regex=True)
+# Try to replace the numbers with "person"
 
 # Test with smaller sample and implement a better data intake method 
-test_set = text[0:100]
+test_set = text[0:10]
 
 text = tp.remove_non_ascii(test_set)    
 
@@ -81,14 +83,14 @@ for i in range(len(similarities)):
 predicted_prob = similarities
 predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
-truncated_text[92]
-predicted[92]
-similarities[92]
+truncated_text[2]
+predicted[2]
+similarities[2]
 
 labels_pred = {labels: predicted_prob[1][idx] for idx, labels in enumerate(labels)}
 
 sorted(labels_pred, key=labels_pred.get, reverse=True)
-sorted(predicted_prob[1], reverse=True)
+sorted(predicted_prob[2], reverse=True)
 
 sorted_tuples = sorted(labels_pred.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -103,7 +105,7 @@ for ind, t in enumerate(predicted_prob):
 
 len(labels_probability)
 
-validation_df = pd.DataFrame(truncated_text, columns=['cleaned_text_lemma'])    
+validation_df = pd.DataFrame(truncated_text, columns=['text'])    
 validation_df['reults_ordered'] = labels_probability
 
-validation_df.to_csv(os.path.join(data_path,'validation_test.csv'))
+validation_df.to_csv(os.path.join(data_path,'validation_test_02032021.csv'))
