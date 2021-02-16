@@ -30,8 +30,8 @@ text = text.str.replace('(\d{2}|d{3})', 'person', regex=True)
 # Try to replace the numbers with "person"
 
 # Test with smaller sample and implement a better data intake method 
-test_set = text[0:10]
-
+test_set = text[0:50]
+len(test_set)
 text = tp.remove_non_ascii(test_set)    
 
 word_counts = tp.word_count_entry(text)
