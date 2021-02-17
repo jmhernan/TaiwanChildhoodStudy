@@ -53,13 +53,11 @@ def remove_non_ascii(txt):
         clean_txt[ind] = t.decode('ascii')
     return clean_txt
  
-def token_trunc(txt, max_length):
+def remove_empty(txt):
     '''
-    Revome entries that are longer than specified length
     Remove empty list entries
     '''
-    updated_txt = [l for l in txt if len(l.split()) < max_length]
-    updated_txt = list(filter(None, updated_txt))
+    updated_txt = list(filter(None, txt))
     return updated_txt 
 
 def word_count_entry(txt):
