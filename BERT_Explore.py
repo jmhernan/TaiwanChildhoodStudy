@@ -29,16 +29,14 @@ text = df_text.apply(tp.clean_text)
 text = text.str.replace('(\d{2}|d{3})', 'person', regex=True)
 # Try to replace the numbers with "person"
 
-# Test with smaller sample and implement a better data intake method 
-test_set = text[0:50]
-len(test_set)
-text = tp.remove_non_ascii(test_set)    
+text = tp.remove_non_ascii(text)    
+len(text)
 
-word_counts = tp.word_count_entry(text)
-truncated_text = tp.token_trunc(text, 500)
+text = tp.remove_empty(text)
+len(text)
 
 ###
-tp.get_top_n_words(truncated_text, n=100)
+tp.get_top_n_words(text, n=100)
 
 # Load keywords json
 cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
@@ -47,14 +45,19 @@ cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.js
 tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 m_bert = transformers.TFBertModel.from_pretrained('bert-base-uncased')
 
-def utils_bert_embedding(txt, tokenizer, bert_model):
-    idx = tokenizer.encode(txt)
+def utils_bert_embedding(txt, tokenizer, bert_model): # handle truncation here 
+    idx = tokenizer.encode(txt,truncation=True, max_length=512)
     idx = np.array(idx)[None,:]  
     embedding = bert_model(idx)
     X = np.array(embedding[0][0][1:-1])
     return X
-    
-mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in truncated_text]    
+
+# See how the truncation works ########
+test = "how the heck do we do this now if this is being truncated"
+idx = tokenizer.encode(test,truncation=True, max_length=5)
+#########
+
+mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in text]    
 
 ## create the feature matrix (observations x 768)
 X = np.array(mean_vec)
@@ -83,7 +86,7 @@ for i in range(len(similarities)):
 predicted_prob = similarities
 predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
-truncated_text[2]
+text[2]
 predicted[2]
 similarities[2]
 
@@ -105,7 +108,7 @@ for ind, t in enumerate(predicted_prob):
 
 len(labels_probability)
 
-validation_df = pd.DataFrame(truncated_text, columns=['text'])    
+validation_df = pd.DataFrame(text, columns=['text'])    
 validation_df['reults_ordered'] = labels_probability
 
-validation_df.to_csv(os.path.join(data_path,'validation_test_02032021.csv'))
+validation_df.to_csv(os.path.join(data_path,'validation_test_02172021.csv'))
