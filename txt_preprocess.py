@@ -1,14 +1,8 @@
-# Functions specific to preprocess raw extract data from GoogleSheets
-
+# Functions specific to preprocess raw extract text data
 import re
 import json
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
-
-# regex conditions for text cleanup
-BAD_SYMBOLS_RE = re.compile(r'[\W]')
-REM_LETTER = re.compile(r'(\b\w{1}\b)')
-REM_NAN_WRD = re.compile(r'^(?:\s*nan\s*)')
 
 # handle json
 def get_metadata_dict(metadata_file):
@@ -17,10 +11,16 @@ def get_metadata_dict(metadata_file):
     return metadata
 
 # clean text 
-def clean_text(text):    
+def clean_text(text):
+    # regex conditions for text cleanup
+    BAD_SYMBOLS_RE = re.compile(r'[\W]')
+    REM_LETTER = re.compile(r'(\b\w{1}\b)')
+    REM_NAN_WRD = re.compile(r'^(?:\s*nan\s*)')
+    PERSON_NUM = re.compile(r'(\d{3}|\d{2}|\d{1})')    
     text = BAD_SYMBOLS_RE.sub(' ', text)
     text = REM_LETTER.sub('', text) 
     text = REM_NAN_WRD.sub('', text)
+    text = PERSON_NUM.sub('', text)
     text = str.lower(text)
     return text
 

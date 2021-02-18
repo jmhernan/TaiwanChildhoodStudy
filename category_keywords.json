@@ -81,14 +81,10 @@
         "alright",
         "agree",
         "good",
-        "request"
-    ],
-    "TEASING":[
-        "sad",
-        "tease",
-        "embarrassed",
-        "laugh",
-        "yell",
-        "tickle"
+        "request",
+        "loan",
+        "comply",
+        "happy",
+        "nod"
     ]
 }

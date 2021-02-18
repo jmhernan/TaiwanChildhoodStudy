@@ -1,3 +1,4 @@
+# explore diffreent distance metrics 
 import pandas as pd
 import numpy as np
 from sklearn import metrics, manifold
@@ -36,7 +37,7 @@ len(text)
 
 # remove stop words
 text = [remove_stopwords(s) for s in text]
-
+text[0]
 # seeing top words
 tp.get_top_n_words(text, n=100)
 
@@ -67,7 +68,7 @@ mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in text
 ## create the feature matrix (observations x 768)
 X = np.array(mean_vec)
 X.shape
-
+X[0]
 # Create dict of context 
 dict_codes = {key: None for key in cat_keyw.keys()}
 
@@ -75,44 +76,43 @@ for k in cat_keyw.keys():
     dict_codes[k] = tp.get_similar_words(cat_keyw[k],30, gl_embed)
 
 dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
+dict_y['FAMILY']
+dict_y.keys()
+
+[metrics.pairwise.cosine_similarity(X[0].reshape(1,-1),y.reshape(1,-1)) for y in dict_y.values()]
+
+# We want to iterate the X entry across all the dict_y entries and get a single value for each 
 
 # Create model
 similarities = np.array([metrics.pairwise.cosine_similarity(X,[y]).T.tolist()[0] for y in dict_y.values()]).T
+test = [metrics.pairwise.cosine_similarity(X,[y]).T.tolist()[0] for y in dict_y.values()] # This returns 100 cosine similarity scores per dict embeddings 7
+len(test[0])
+type(test)
+len(test)
+len(similarities)
+test = np.array([test[0],test[1],test[2],test[3],test[4],test[5]]).T
 
-labels = list(dict_y.keys())
-for i in range(len(similarities)):
-    if sum(similarities[i]) == 0:
-        similarities[i] = [0]*len(labels)
-        similarities[i][np.random.choice(range(len(labels)))] = 1
-    similarities[i] = similarities[i] / sum(similarities[i])
+from scipy import spatial
 
-# Classify based on Cosine Similarity score
-predicted_prob = similarities
-predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
+test = [spatial.distance.cosine(X[i],y).T for i in range(len(X)) for y in dict_y.values())]
 
-text[12]
-predicted[12]
-similarities[12]
+for i,y in zip(range(len(X)),dict_y.values()): # append list with similarity values instead of list comprehension WIP 
+    print(i,y)
 
-labels_pred = {labels: predicted_prob[12][idx] for idx, labels in enumerate(labels)}
+similarities[1]
+test[1]
+text[1]
+test_1 = [spatial.distance.cosine(X,[y]).T for y in dict_y.values()] # This returns 100 cosine similarity scores per dict embeddings 7
 
-sorted(labels_pred, key=labels_pred.get, reverse=True)
-sorted(predicted_prob[1], reverse=True)
+[spatial.distance.cosine(X[1],y) for y in dict_y.values()]
 
-sorted_tuples = sorted(labels_pred.items(), key=operator.itemgetter(1), reverse=True)
+# Word Movers Implementation entries X 6 categories of interest
+s1 = text[1]
+s2 = text[40]
+play = dict_codes["PLAY"]
+conflict = dict_codes["CONFLICT"]
+store = dict_codes["SHOPPING"]
+# using raw entreies 
 
-# putting together a comprehensible look up table in pandas make function WIP
-# using all the labels
-labels_probability = [0]*len(predicted_prob)
-
-for ind, t in enumerate(predicted_prob):
-    labels_pred = {labels: t[idx] for idx, labels in enumerate(labels)}
-    sorted_tuples = sorted(labels_pred.items(), key=operator.itemgetter(1), reverse=True)
-    labels_probability[ind] = list(sorted_tuples)
-
-len(labels_probability)
-
-validation_df = pd.DataFrame(text, columns=['text'])    
-validation_df['reults_ordered'] = labels_probability
-
-validation_df.to_csv(os.path.join(data_path,'validation_test_02182021.csv'))
+[gl_embed.wmdistance(s2,y) for y in dict_codes.values()] # WIP figure out own implementation
+dict_codes.keys()
