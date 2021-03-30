@@ -42,7 +42,7 @@ text[0]
 tp.get_top_n_words(text, n=100)
 
 # subesetting for testing 
-text = text[0:100]
+# text = text[0:100]
 len(text)
 # Load keywords json
 cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
@@ -73,7 +73,7 @@ X[0]
 dict_codes = {key: None for key in cat_keyw.keys()}
 
 for k in cat_keyw.keys():
-    dict_codes[k] = tp.get_similar_words(cat_keyw[k],30, gl_embed)
+    dict_codes[k] = tp.get_similar_words(cat_keyw[k],20, gl_embed)
 
 dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
 dict_y['FAMILY']

@@ -13,6 +13,7 @@ from gensim.parsing.preprocessing import remove_stopwords
 
 import os
 import operator
+import json
 
 project_root = '/Users/josehernandez/Documents/eScience/projects/TaiwanChildhoodStudy/'
 
@@ -36,17 +37,15 @@ len(text)
 
 # remove stop words
 text = [remove_stopwords(s) for s in text]
+len(text)
 
 # seeing top words
 tp.get_top_n_words(text, n=100)
 
-# subesetting for testing 
-text = text[0:100]
-len(text)
 # Load keywords json
 cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
 
-# BERT 
+# Load BERT 
 tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 m_bert = transformers.TFBertModel.from_pretrained('bert-base-uncased')
 
@@ -56,11 +55,6 @@ def utils_bert_embedding(txt, tokenizer, bert_model): # handle truncation here
     embedding = bert_model(idx)
     X = np.array(embedding[0][0][1:-1])
     return X
-
-# See how the truncation works ########
-test = "how the heck do we do this now if this is being truncated"
-idx = tokenizer.encode(test,truncation=True, max_length=5)
-#########
 
 mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in text]    
 
@@ -72,7 +66,10 @@ X.shape
 dict_codes = {key: None for key in cat_keyw.keys()}
 
 for k in cat_keyw.keys():
-    dict_codes[k] = tp.get_similar_words(cat_keyw[k],30, gl_embed)
+    dict_codes[k] = tp.get_similar_words(cat_keyw[k],20, gl_embed)
+# Inspect dictionary of keywords
+with open('category_keywords_glove.json', 'w') as fp:
+    json.dump(dict_codes, fp, indent=4)
 
 dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
 
@@ -97,11 +94,11 @@ similarities[12]
 labels_pred = {labels: predicted_prob[12][idx] for idx, labels in enumerate(labels)}
 
 sorted(labels_pred, key=labels_pred.get, reverse=True)
-sorted(predicted_prob[1], reverse=True)
+sorted(predicted_prob[12], reverse=True)
 
 sorted_tuples = sorted(labels_pred.items(), key=operator.itemgetter(1), reverse=True)
 
-# putting together a comprehensible look up table in pandas make function WIP
+# putting together a comprehensive look up table in pandas make function WIP
 # using all the labels
 labels_probability = [0]*len(predicted_prob)
 
@@ -115,4 +112,4 @@ len(labels_probability)
 validation_df = pd.DataFrame(text, columns=['text'])    
 validation_df['reults_ordered'] = labels_probability
 
-validation_df.to_csv(os.path.join(data_path,'validation_test_02182021.csv'))
+validation_df.to_csv(os.path.join(data_path,'validation_test_03102021.csv'))
