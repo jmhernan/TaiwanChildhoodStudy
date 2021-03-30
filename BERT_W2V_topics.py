@@ -32,8 +32,12 @@ text = df_text.apply(tp.clean_text)
 text = tp.remove_non_ascii(text)    
 len(text)
 
-text = tp.remove_empty(text)
-len(text)
+# what is empty, for Jing to check
+text.index("")
+# [1218]
+
+text_test = tp.remove_empty(text)
+len(text_test)
 
 # remove stop words
 text = [remove_stopwords(s) for s in text]
@@ -58,6 +62,8 @@ def utils_bert_embedding(txt, tokenizer, bert_model): # handle truncation here
     X = np.array(embedding[0][0][1:-1])
     return X
 
+num_words_row = [len(words.split()) for words in text]
+max_seq_len = max(num_words_row)
 # See how the truncation works ########
 test = "how the heck do we do this now if this is being truncated"
 idx = tokenizer.encode(test,truncation=True, max_length=5)
