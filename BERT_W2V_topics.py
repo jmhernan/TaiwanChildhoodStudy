@@ -25,7 +25,7 @@ df = pd. read_excel(os.path.join(data_path,'4ChildObservation_MasterFile_0120_20
 
 df_text = df["text"].astype(str)
 
-gl_embed = gensim_api.load("glove-wiki-gigaword-300") # create function to load pickle or download 
+# gl_embed = gensim_api.load("glove-wiki-gigaword-300") # create function to load pickle or download 
 
 # explore words for potential topics
 text = df_text.apply(tp.clean_text)
@@ -36,8 +36,8 @@ len(text)
 text.index("")
 # [1218]
 
-text_test = tp.remove_empty(text)
-len(text_test)
+text = tp.remove_empty(text)
+len(text)
 
 # remove stop words
 text = [remove_stopwords(s) for s in text]
@@ -52,36 +52,48 @@ len(text)
 cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
 
 # BERT 
-tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+bert_tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 m_bert = transformers.TFBertModel.from_pretrained('bert-base-uncased')
 
-def utils_bert_embedding(txt, tokenizer, bert_model): # handle truncation here 
+# See how the truncation works ########
+test = "how the heck do we do this now if this is being truncated"
+idx = bert_tokenizer.encode(test,truncation=True, max_length=5)
+
+# RoBerta
+roberta_tokenizer = transformers.RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=True)
+m_roberta = transformers.TFRobertaModel.from_pretrained('roberta-base')
+
+def utils_embedding(txt, tokenizer, model): # handle truncation here 
     idx = tokenizer.encode(txt,truncation=True, max_length=512)
     idx = np.array(idx)[None,:]  
-    embedding = bert_model(idx)
+    embedding = model(idx)
     X = np.array(embedding[0][0][1:-1])
     return X
 
 num_words_row = [len(words.split()) for words in text]
 max_seq_len = max(num_words_row)
-# See how the truncation works ########
-test = "how the heck do we do this now if this is being truncated"
-idx = tokenizer.encode(test,truncation=True, max_length=5)
-#########
 
-mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in text]    
+#########
+mean_vec = [utils_embedding(txt=txt, tokenizer=bert_tokenizer, model=m_bert).mean(0) for txt in text]    
 
 ## create the feature matrix (observations x 768)
 X = np.array(mean_vec)
 X.shape
-X[0]
+
+###############WIP
+# create function to test this everytime
+X_sum = np.sum(X)
+np.isnan(X_sum)
+location = np.argwhere(np.isnan(X)) #check nans from previous implementation 
+#######################
+
 # Create dict of context 
 dict_codes = {key: None for key in cat_keyw.keys()}
 
 for k in cat_keyw.keys():
     dict_codes[k] = tp.get_similar_words(cat_keyw[k],20, gl_embed)
 
-dict_y = {k:utils_bert_embedding(v, tokenizer, m_bert).mean(0) for k,v in dict_codes.items()}
+dict_y = {k:utils_embedding(v, bert_tokenizer, m_bert).mean(0) for k,v in cat_keyw.items()}
 dict_y['FAMILY']
 dict_y.keys()
 
@@ -91,6 +103,8 @@ dict_y.keys()
 
 # Create model
 similarities = np.array([metrics.pairwise.cosine_similarity(X,[y]).T.tolist()[0] for y in dict_y.values()]).T
+
+####WIP to try other distances 
 test = [metrics.pairwise.cosine_similarity(X,[y]).T.tolist()[0] for y in dict_y.values()] # This returns 100 cosine similarity scores per dict embeddings 7
 len(test[0])
 type(test)
@@ -122,3 +136,25 @@ store = dict_codes["SHOPPING"]
 
 [gl_embed.wmdistance(s2,y) for y in dict_codes.values()] # WIP figure out own implementation
 dict_codes.keys()
+############
+
+# Original implementation
+labels = list(dict_y.keys())
+for i in range(len(similarities)):
+    if sum(similarities[i]) == 0:
+        similarities[i] = [0]*len(labels)
+        similarities[i][np.random.choice(range(len(labels)))] = 1
+    similarities[i] = similarities[i] / sum(similarities[i])
+
+# Classify based on Cosine Similarity score
+predicted_prob = similarities
+predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
+
+text[0]
+predicted[0]
+similarities[0]
+
+labels_pred = {labels: predicted_prob[12][idx] for idx, labels in enumerate(labels)}
+
+sorted(labels_pred, key=labels_pred.get, reverse=True)
+sorted(predicted_prob[12], reverse=True)
