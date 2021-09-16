@@ -1,4 +1,5 @@
 # explore diffreent distance metrics 
+from numpy.core.fromnumeric import mean
 import pandas as pd
 import numpy as np
 from sklearn import metrics, manifold
@@ -14,6 +15,8 @@ from gensim.parsing.preprocessing import remove_stopwords
 
 import os
 import operator
+
+from multiprocessing import  Pool
 
 project_root = '/Users/josehernandez/Documents/eScience/projects/TaiwanChildhoodStudy/'
 
@@ -70,14 +73,14 @@ def utils_embedding(txt, tokenizer, model): # handle truncation here
     X = np.array(embedding[0][0][1:-1])
     return X
 
-num_words_row = [len(words.split()) for words in text]
-max_seq_len = max(num_words_row)
-
 #########
 mean_vec = [utils_embedding(txt=txt, tokenizer=bert_tokenizer, model=m_bert).mean(0) for txt in text]    
 
+# RoBerta 
+r_mean_vec = [utils_embedding(txt=txt, tokenizer=roberta_tokenizer, model=m_roberta).mean(0) for txt in text]    
+
 ## create the feature matrix (observations x 768)
-X = np.array(mean_vec)
+X = np.array(r_mean_vec) # WIP changed globally
 X.shape
 
 ###############WIP
@@ -87,17 +90,9 @@ np.isnan(X_sum)
 location = np.argwhere(np.isnan(X)) #check nans from previous implementation 
 #######################
 
-# Create dict of context 
-dict_codes = {key: None for key in cat_keyw.keys()}
-
-for k in cat_keyw.keys():
-    dict_codes[k] = tp.get_similar_words(cat_keyw[k],20, gl_embed)
-
-dict_y = {k:utils_embedding(v, bert_tokenizer, m_bert).mean(0) for k,v in cat_keyw.items()}
+dict_y = {k:utils_embedding(v, roberta_tokenizer, m_roberta).mean(0) for k,v in cat_keyw.items()} #WIP
 dict_y['FAMILY']
 dict_y.keys()
-
-[metrics.pairwise.cosine_similarity(X[0].reshape(1,-1),y.reshape(1,-1)) for y in dict_y.values()]
 
 # We want to iterate the X entry across all the dict_y entries and get a single value for each 
 
@@ -150,11 +145,11 @@ for i in range(len(similarities)):
 predicted_prob = similarities
 predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
-text[0]
-predicted[0]
-similarities[0]
+text[7] 
+predicted[7]
+similarities[7]
 
-labels_pred = {labels: predicted_prob[12][idx] for idx, labels in enumerate(labels)}
+labels_pred = {labels: predicted_prob[7][idx] for idx, labels in enumerate(labels)}
 
 sorted(labels_pred, key=labels_pred.get, reverse=True)
-sorted(predicted_prob[12], reverse=True)
+sorted(predicted_prob[5], reverse=True)
