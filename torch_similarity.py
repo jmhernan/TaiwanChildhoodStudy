@@ -48,54 +48,6 @@ bert_model = AutoModel.from_pretrained(model_name)
 # test inputs 
 test_input = text[0:5]
 
-# tokenize text
-tokens = {'input_ids': [], 'attention_mask': []}
-
-###############
-# WIP create function to do this for each entry and output the single mean vector
-# per entry
-
-tokens_test = bert_tokenizer.encode_plus(text[0], max_length=128,
-                                            truncation=True, 
-                                            padding='max_length', 
-                                            return_tensors='pt')
-tokens_test['input_ids']
-tokens_test['attention_mask']
-
-outputs_test = bert_model(**tokens_test)
-outputs_test.keys()
-
-embeddings_test = outputs_test.last_hidden_state
-embeddings_test
-
-attention_mask_test = tokens_test['attention_mask']
-attention_mask_test.shape
-
-mask_test = attention_mask_test.unsqueeze(-1).expand(embeddings_test.size()).float()
-mask_test.shape
-mask_test
-
-masked_embeddings_test = embeddings_test * mask_test
-masked_embeddings_test.shape
-masked_embeddings_test
-
-# sum along one axis
-summed_test = torch.sum(masked_embeddings_test, 1)
-summed_test.shape
-
-# Then sum the number of values that must be given attention in each 
-# position of the tensor:
-summed_mask_test = torch.clamp(mask_test.sum(1), min=1e-9)
-summed_mask_test.shape
-
-# calculate mean pooled
-mean_pooled_test = summed_test / summed_mask_test
-
-# RETURN THIS
-# convert from PyTorch tensor to numpy array
-mean_pooled_test = mean_pooled_test.detach().numpy()
-###########
-
 # WIP function
 def embedding_mean_vector(txt, tokenizer, model):
     # step 1 tokenize entry
@@ -127,8 +79,8 @@ def embedding_mean_vector(txt, tokenizer, model):
 mean_pooled_2 = embedding_mean_vector(txt=text[0], tokenizer=bert_tokenizer, model=bert_model)
 mean_pooled_2.shape
 mean_pooled_test.shape
-###############
 
+# old method 
 for sentence in test_input:
     new_tokens = bert_tokenizer.encode_plus(sentence, max_length=128,
                                             truncation=True, 
@@ -180,9 +132,24 @@ mean_pooled = summed / summed_mask
 # calculate similarity 
 # convert from PyTorch tensor to numpy array
 mean_pooled = mean_pooled.detach().numpy()
+type(mean_pooled)
+mean_pooled.shape
+
+# WIP: try with function call and list comprehension
+mean_pooled_test = np.array([embedding_mean_vector(txt=txt, tokenizer=bert_tokenizer, model=bert_model) for txt in test_input])
+type(mean_pooled_test)
+mean_pooled_test.shape
+mean_pooled_test[0]
 
 # calculate
 cosine_similarity(
     [mean_pooled[0]],
     mean_pooled[1:]
 )
+
+cosine_similarity(
+    [mean_pooled_test[0]],
+    mean_pooled_test[1:]
+)
+
+mean_pooled_test = np.array([embedding_mean_vector(txt=txt, tokenizer=bert_tokenizer, model=bert_model) for txt in text[0]])
