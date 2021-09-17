@@ -46,7 +46,7 @@ bert_tokenizer = AutoTokenizer.from_pretrained(model_name)
 bert_model = AutoModel.from_pretrained(model_name)
 
 # test inputs 
-test_input = text[0:5]
+test_input = text[0:2]
 
 # WIP function
 def embedding_mean_vector(txt, tokenizer, model):
@@ -76,8 +76,9 @@ def embedding_mean_vector(txt, tokenizer, model):
     return mean_pooled
 
 
-mean_pooled_2 = embedding_mean_vector(txt=text[0], tokenizer=bert_tokenizer, model=bert_model)
+mean_pooled_2 = embedding_mean_vector(txt=text[1], tokenizer=bert_tokenizer, model=bert_model)
 mean_pooled_2.shape
+type(mean_pooled_2)
 mean_pooled_test.shape
 
 # old method 
@@ -136,7 +137,13 @@ type(mean_pooled)
 mean_pooled.shape
 
 # WIP: try with function call and list comprehension
-mean_pooled_test = np.array([embedding_mean_vector(txt=txt, tokenizer=bert_tokenizer, model=bert_model) for txt in test_input])
+mean_pooled_test_e = np.empty((0, 768), float)
+mean_pooled_test_e.shape
+# WIP:
+mean_pooled_test = np.append(mean_pooled_test_e, [embedding_mean_vector(txt=txt, tokenizer=bert_tokenizer, model=bert_model) for txt in test_input], axis=0)
+# ValueError: all the input arrays must have same number of dimensions, 
+# but the array at index 0 has 2 dimension(s) and the array at index 1 has 3 dimension(s)
+
 type(mean_pooled_test)
 mean_pooled_test.shape
 mean_pooled_test[0]
