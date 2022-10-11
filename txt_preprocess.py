@@ -65,3 +65,12 @@ def word_count_entry(txt):
     for index, obs in enumerate(txt):
         word_counts[index] = len(obs.split())
     return word_counts
+
+def parallelize_list(txt, function, cores=4):
+    ls_split = np.array_split(txt, cores)
+    pool = Pool(cores)
+    arr = np.concatenate(pool.map(function, ls_split))
+    pool.close()
+    pool.join()
+    return arr
+

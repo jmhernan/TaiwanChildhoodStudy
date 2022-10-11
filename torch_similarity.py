@@ -76,10 +76,9 @@ def embedding_mean_vector(txt, tokenizer, model):
     return mean_pooled
 
 
-mean_pooled_2 = embedding_mean_vector(txt=text[1], tokenizer=bert_tokenizer, model=bert_model)
-mean_pooled_2.shape
+mean_pooled = embedding_mean_vector(txt=text, tokenizer=bert_tokenizer, model=bert_model)
+mean_pooled.shape
 type(mean_pooled_2)
-mean_pooled_test.shape
 
 # old method 
 for sentence in test_input:
