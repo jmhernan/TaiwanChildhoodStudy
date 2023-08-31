@@ -8,24 +8,27 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import gensim
 import gensim.downloader as gensim_api
-import transformers
+from transformers import AutoTokenizer, AutoModel
 from gensim.parsing.preprocessing import remove_stopwords
+import torch
 
 import os
 import operator
 import json
 
-project_root = '/Users/josehernandez/Documents/eScience/projects/TaiwanChildhoodStudy/'
+project_root = '/Users/josehernandez/Documents/projects/TaiwanChildhoodStudy/'
 
 import txt_preprocess as tp
 
 data_path = project_root + 'data/'
 
-df = pd. read_excel(os.path.join(data_path,'4ChildObservation_MasterFile_0120_2021.xlsx'))
+df = pd. read_excel(os.path.join(data_path,
+    '4ChildObservation_MasterFile_0120_2021.xlsx'))
 
 df_text = df["text"].astype(str)
 
-gl_embed = gensim_api.load("glove-wiki-gigaword-300") # create function to load pickle or download 
+# WIP: Import BERT vocab for this...maybe contextual words
+#gl_embed = gensim_api.load("glove-wiki-gigaword-300") # create function to load pickle or download 
 
 # explore words for potential topics
 text = df_text.apply(tp.clean_text)
@@ -43,11 +46,43 @@ len(text)
 tp.get_top_n_words(text, n=100)
 
 # Load keywords json
-cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
+cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 
+                                                'category_keywords.json'))
+## WIP:try torch 
+tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/stsb-roberta-base-v2')
+model = AutoModel.from_pretrained('sentence-transformers/stsb-roberta-base-v2')
 
-# Load BERT 
-tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
-m_bert = transformers.TFBertModel.from_pretrained('bert-base-uncased')
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0] #First element of model_output contains all token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+# Sentences we want sentence embeddings for
+sentences = ['This is an example sentence', 'Each sentence is converted']
+
+# Tokenize sentences
+encoded_input = tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
+
+# Compute token embeddings
+with torch.no_grad():
+    model_output = model(**encoded_input)
+
+# Perform pooling. In this case, max pooling.
+sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+
+#def utils_bert_embedding(txt, tokenizer, bert_model): # handle truncation here 
+ #   idx = tokenizer.encode(txt,truncation=True, max_length=512)
+ #   idx = np.array(idx)[None,:]  
+ #   embedding = bert_model(idx)
+ #   return embedding
+
+#utils_bert_embedding(txt = sentences[0],tokenizer = tokenizer, bert_model = m_bert)
+# from torch
+#np.array(sentence_embeddings[0][0][1:-1])
+
+#tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased', 
+#                                                        do_lower_case=True)
+#m_bert = transformers.TFBertModel.from_pretrained('bert-base-uncased')
 
 def utils_bert_embedding(txt, tokenizer, bert_model): # handle truncation here 
     idx = tokenizer.encode(txt,truncation=True, max_length=512)
@@ -55,6 +90,13 @@ def utils_bert_embedding(txt, tokenizer, bert_model): # handle truncation here
     embedding = bert_model(idx)
     X = np.array(embedding[0][0][1:-1])
     return X
+
+# pytorch version
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0] #First element of model_output contains all token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
 
 mean_vec = [utils_bert_embedding(txt, tokenizer, m_bert).mean(0) for txt in text]    
 

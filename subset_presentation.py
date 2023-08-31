@@ -16,7 +16,7 @@ import os
 import operator
 import json
 
-project_root = '/Users/josehernandez/Documents/eScience/projects/TaiwanChildhoodStudy/'
+project_root = '/Users/josehernandez/Documents/projects/TaiwanChildhoodStudy/'
 
 import txt_preprocess as tp
 
@@ -33,7 +33,7 @@ df_obs = df_text.loc[subset_index].reset_index(drop=True)
 # gl_embed = gensim_api.load("glove-wiki-gigaword-300") # create function to load pickle or download 
 
 # explore words for potential topics
-text = test.apply(tp.clean_text)
+text = df_obs.apply(tp.clean_text)
 text = tp.remove_non_ascii(text)    
 len(text)
 
@@ -92,7 +92,7 @@ for i in range(len(similarities)):
 predicted_prob = similarities
 predicted = [labels[np.argmax(pred)] for pred in predicted_prob]
 
-test[12]
+text[12]
 predicted[12]
 similarities[12]
 
@@ -119,7 +119,7 @@ df_labels_prob['obs_key'] = df_labels_prob.index
 df_labels_prob = df_labels_prob[['obs_key','FAMILY','SCHOOL','SHOPPING','PLAY','CONFLICT','COOPERATION']]
 
 df_labels_prob.style.background_gradient(subset=['FAMILY','SCHOOL','SHOPPING','PLAY','CONFLICT','COOPERATION'])
-
+df_obs[9]
 # graphs 
 theme = list(zip(*labels_probability[1]))[0]
 score = list(zip(*labels_probability[1]))[1]
