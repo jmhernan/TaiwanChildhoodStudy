@@ -39,6 +39,7 @@ tp.get_top_n_words(text, n=100)
 cat_keyw = tp.get_metadata_dict(os.path.join(project_root, 'category_keywords.json'))
 
 # BERT sentence model specification
+# deprecated
 model_name = 'sentence-transformers/bert-base-nli-mean-tokens'
 
 # initialize the tokenizer

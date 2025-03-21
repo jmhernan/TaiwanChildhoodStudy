@@ -192,8 +192,6 @@ cos = torch.nn.CosineSimilarity(dim=0, eps=1e-6)
 
 all_similarity_scores = []
 # for each tensor in the DataFrame
-# assuming 'datasets1' and 'datasets2' are your Dataset objects
-# and 'tensor' is the column in both where the embeddings are stored
 
 # initialize a PyTorch cosine similarity object
 cos = torch.nn.CosineSimilarity(dim=0, eps=1e-6)
